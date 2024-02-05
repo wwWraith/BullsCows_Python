@@ -9,23 +9,21 @@ CHEAT_MODE = False
 # Если не пустая строка, то компьютер загадывает и постоянно выбирает это число
 TEST_NUMBER = ""
 
-# Используемые цифры
-DIGITS = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
-# Список допустимых цифр в виде строки
-DIGITS_STRING = "".join(d for d in DIGITS)
-# Запрещать ли первую цифру из списка в начале числа
-NO_LEADING_ZERO = True
 # Количество цифр в числе
 NUM_DIGITS = 4
+# Используемые цифры
+DIGITS = "0123456789"
+# Запрещать ли первую цифру из списка в начале числа
+NO_LEADING_ZERO = True
 # Вероятность выбора компьютером в свой ход просто случайного числа (от 0 до 1)
 RANDOM_GUESS_CHANCE = 0.2
 
 # Максимально допустимая длина строк для переноса при выводе
 MAX_LINE_LENGTH = 80
 # Использовать ли цветной режим
-COLOR_MODE = True
+USE_COLOR_MODE = True
 
-if COLOR_MODE:
+if USE_COLOR_MODE:
     # Коды цветов ANSI для терминала
     COLOR_RED = "\033[31m"
     COLOR_GREEN = "\033[32m"
@@ -72,8 +70,8 @@ RULES_TEXT = (
     f"Правила:\n\n"
     f"  Двое игроков (человек и компьютер) загадывают по числу, состоящему из "
     f"{yellow(f'{NUM_DIGITS} разных цифр')}"
-    f"{f' и {yellow(f'не начинающемуся с {DIGITS[0]}')}' * NO_LEADING_ZERO}. "
-    f"Допустимые цифры: {yellow(DIGITS_STRING)}.\n"
+    f"{NO_LEADING_ZERO * f' и {yellow(f'не начинающемуся с {DIGITS[0]}')}'}. "
+    f"Допустимые цифры: {yellow(DIGITS)}.\n"
     f"  Затем они пытаются угадать число, загаданное соперником. Для этого они каждый "
     f"ход называют числа, составленные по тем же правилам.\n"
     f"  Если в загаданном числе соперника есть цифра из тех, что были названы при "
@@ -85,8 +83,8 @@ RULES_TEXT = (
 )
 # Текст подсказки для пользователя при необходимости повторить ввод числа
 INPUT_HINT = (
-    f"Ошибка! Введите число, состоящее из {NUM_DIGITS} разных цифр ({DIGITS_STRING}) "
-    f"{f'и не начинающееся с {DIGITS[0]}' * NO_LEADING_ZERO}: "
+    f"Ошибка! Введите число, состоящее из {NUM_DIGITS} разных цифр ({DIGITS}) "
+    f"{NO_LEADING_ZERO * f'и не начинающееся с {DIGITS[0]}'}: "
 )
 
 
@@ -135,16 +133,16 @@ def number_choice():
     Генерирует случайное число, соответствующее правилам игры.
     :return: случайное число, соответствующее правилам игры
     """
-    # Копируем список по значению
-    temp_digits = DIGITS[:]
+    # Копируем строку с допустимыми цифрами в список
+    digits_list = list(DIGITS)
     # Первая цифра из списка может быть выбрана первой цифрой числа
     # в зависимости от NO_LEADING_ZERO;
     # использованная цифра удаляется из списка для генерации
-    num = temp_digits.pop(random.randint(1 * NO_LEADING_ZERO, len(temp_digits) - 1))
+    num = digits_list.pop(random.randint(NO_LEADING_ZERO * 1, len(digits_list) - 1))
     for n in range(NUM_DIGITS - 1):
         # Добавляем оставшиеся цифры;
         # использованные цифры удаляются из списка для генерации
-        num += temp_digits.pop(random.randint(0, len(temp_digits) - 1))
+        num += digits_list.pop(random.randint(0, len(digits_list) - 1))
     return num
 
 
@@ -203,14 +201,14 @@ user_cows: list[int] = []
 game_over: bool = False
 
 # При необходимости устанавливаем цветной режим
-if COLOR_MODE:
+if USE_COLOR_MODE:
     # Переводим терминал в цветной режим
     system("color")
     # Заставляем textwrap рассчитывать длину строк, игнорируя цветовые коды ANSI
     textwrap.len = color_len
 
 # Проверяем корректность правил
-if len(DIGITS) < NUM_DIGITS or len(DIGITS) == 1 or len(DIGITS) == 2 and NO_LEADING_ZERO:
+if len(DIGITS) < NUM_DIGITS or len(DIGITS) == 1 or NO_LEADING_ZERO and len(DIGITS) == 2:
     print(
         red("Ошибка в установленных правилах!")
         + "\nДопустимых цифр меньше, чем требуется в числах. Игра невозможна."
