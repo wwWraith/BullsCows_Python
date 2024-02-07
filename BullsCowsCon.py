@@ -70,7 +70,7 @@ RULES_TEXT = (
     f"Правила:\n\n"
     f"  Двое игроков (человек и компьютер) загадывают по числу, состоящему из "
     f"{yellow(f'{NUM_DIGITS} разных цифр')}"
-    f"{NO_LEADING_ZERO * f' и {yellow(f'не начинающемуся с {DIGITS[0]}')}'}. "
+    f"{f' и {yellow(f'не начинающемуся с {DIGITS[0]}')}' if NO_LEADING_ZERO else ''}. "
     f"Допустимые цифры: {yellow(DIGITS)}.\n"
     f"  Затем они пытаются угадать число, загаданное соперником. Для этого они каждый "
     f"ход называют числа, составленные по тем же правилам.\n"
@@ -83,8 +83,8 @@ RULES_TEXT = (
 )
 # Текст подсказки для пользователя при необходимости повторить ввод числа
 INPUT_HINT = (
-    f"Ошибка! Введите число, состоящее из {NUM_DIGITS} разных цифр ({DIGITS}) "
-    f"{NO_LEADING_ZERO * f'и не начинающееся с {DIGITS[0]}'}: "
+    f"Ошибка! Введите число, состоящее из {NUM_DIGITS} разных цифр ({DIGITS})"
+    f"{f' и не начинающееся с {DIGITS[0]}' if NO_LEADING_ZERO else ''}: "
 )
 
 
@@ -138,7 +138,9 @@ def number_choice():
     # Первая цифра из списка может быть выбрана первой цифрой числа
     # в зависимости от NO_LEADING_ZERO;
     # использованная цифра удаляется из списка для генерации
-    num = digits_list.pop(random.randint(NO_LEADING_ZERO * 1, len(digits_list) - 1))
+    num = digits_list.pop(
+        random.randint(1 if NO_LEADING_ZERO else 0, len(digits_list) - 1)
+    )
     for n in range(NUM_DIGITS - 1):
         # Добавляем оставшиеся цифры;
         # использованные цифры удаляются из списка для генерации
@@ -158,7 +160,7 @@ def number_is_ok(number: str):
         for digit in number:
             # Если любая из цифр отсутствует в списке допустимых или повторяется,
             # то число не подходит
-            if (digit not in DIGITS) or (number.count(digit) > 1):
+            if digit not in DIGITS or number.count(digit) > 1:
                 return False
         return True
     else:
