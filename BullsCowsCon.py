@@ -186,7 +186,7 @@ def count_bulls_cows(number1: str, number2: str):
 
 
 # Счётчик ходов
-turn: int = 1
+turn: int = 0
 # Список попыток компьютера
 comp_guesses: list[str] = []
 # Список попыток пользователя
@@ -220,6 +220,7 @@ if len(DIGITS) < NUM_DIGITS or len(DIGITS) == 1 or NO_LEADING_ZERO and len(DIGIT
 
 # Основной цикл игры
 while True:
+    turn += 1
     if turn == 1:
         # Очистка экрана терминала и вывод правил
         system("cls||clear")
@@ -314,9 +315,9 @@ while True:
             print("Досадная случайность...")
         print(f"Загаданное компьютером число: {comp_number}")
         game_over = True
-    if game_over and comp_number == user_number:
-        print("Загаданные числа одинаковы - кто бы мог подумать!")
     if game_over:
+        if comp_number == user_number:
+            print("Загаданные числа одинаковы - кто бы мог подумать!")
         if (
             input(
                 f"\nСпасибо за игру!\nНажмите {yellow('Enter')}, чтобы сыграть снова, "
@@ -334,5 +335,3 @@ while True:
             user_bulls.clear()
             user_cows.clear()
             game_over = False
-
-    turn += 1
