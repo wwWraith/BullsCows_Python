@@ -5,7 +5,7 @@ from sys import exit as sysexit
 import textwrap
 
 # Показывать ли загаданное компьютером число
-CHEAT_MODE = True
+CHEAT_MODE = False
 # Если не пустая строка, то компьютер загадывает и постоянно выбирает это число
 TEST_NUMBER = ""
 
