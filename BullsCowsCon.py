@@ -185,6 +185,25 @@ def count_bulls_cows(number1: str, number2: str) -> tuple[int, int]:
     return bulls, cows
 
 
+def guess_is_good(
+    number: str, guesses_list: list[str], bulls_list: list[int], cows_list: list[int]
+) -> bool:
+    """
+    Проверяет, соответствует ли попытка информации из предыдущих ходов.
+    :param number: строка с проверяемым числом
+    :param guesses_list: список из предыдущих попыток
+    :param bulls_list: список из "быков" на предыдущих ходах
+    :param cows_list: список из "коров" на предыдущих ходах
+    :return: True, если попытка подходит, иначе False
+    """
+    for i in range(len(guesses_list)):
+        # Если количество "быков" и "коров" не соответствует хотя бы одной
+        # из предыдущих попыток, то попытка неудачная
+        if count_bulls_cows(number, guesses_list[i]) != (bulls_list[i], cows_list[i]):
+            return False
+    return True
+
+
 def main():
     # Проверяем корректность правил
     if (
@@ -228,7 +247,6 @@ def main():
             # Очистка экрана терминала и вывод правил
             system("cls||clear")
             print_rules()
-
             # Компьютер "загадывает" случайное число, соответствующее правилам игры
             if TEST_NUMBER:
                 comp_number = TEST_NUMBER
@@ -264,19 +282,10 @@ def main():
             # Если нужно, повторяем, пока выбранное число не будет соответствовать
             # полученной в предыдущих попытках информации
             if random() >= RANDOM_GUESS_CHANCE and turn > 1:
-                comp_guess_is_bad = True
-                while comp_guess_is_bad:
-                    comp_guess_is_bad = False
-                    for t in range(turn - 1):
-                        bulls_temp, cows_temp = count_bulls_cows(
-                            comp_guess, comp_guesses[t]
-                        )
-                        # Если количество "быков" и "коров" не соответствует хотя бы
-                        # одной из предыдущих попыток, то выбрать другое число
-                        if bulls_temp != comp_bulls[t] or cows_temp != comp_cows[t]:
-                            comp_guess_is_bad = True
-                            comp_guess = number_choice()
-                            break
+                while not guess_is_good(
+                    comp_guess, comp_guesses, comp_bulls, comp_cows
+                ):
+                    comp_guess = number_choice()
         comp_guesses.append(comp_guess)
 
         # Подсчитываем количество "быков" и "коров" и добавляем в соответствующие списки
