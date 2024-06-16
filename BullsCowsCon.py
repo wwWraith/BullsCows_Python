@@ -87,8 +87,8 @@ RULES_TEXT = (
 INPUT_HINT = (
     f"{red('Ошибка!')} Введите число, состоящее из {green(f'{NUM_DIGITS} разных цифр')}"
     f" ({green(DIGITS)})"
-    f"{f'\nи {red(f"не начинающееся с {DIGITS[0]}")}' if NO_LEADING_ZERO else ''}"
-    f" (или {red(EXIT_KEY)} для выхода): "
+    f"{f'\nи {red(f"не начинающееся с {DIGITS[0]}")}' if NO_LEADING_ZERO else ''} "
+    f"(или {red(EXIT_KEY)} для выхода): "
 )
 
 
@@ -185,153 +185,165 @@ def count_bulls_cows(number1: str, number2: str) -> tuple[int, int]:
     return bulls, cows
 
 
-# Проверяем корректность правил
-if len(DIGITS) < NUM_DIGITS or len(DIGITS) == 1 or NO_LEADING_ZERO and len(DIGITS) == 2:
-    print(
-        red("Ошибка в установленных правилах!")
-        + "\nДопустимых цифр меньше, чем требуется в числах. Игра невозможна."
-    )
-    input(f"Нажмите {yellow('Enter')} для выхода...")
-    sysexit("Invalid configuration")
+def main():
+    # Проверяем корректность правил
+    if (
+        len(DIGITS) < NUM_DIGITS
+        or len(DIGITS) == 1
+        or NO_LEADING_ZERO
+        and len(DIGITS) == 2
+    ):
+        print(
+            red("Ошибка в установленных правилах!")
+            + "\nДопустимых цифр меньше, чем требуется в числах. Игра невозможна."
+        )
+        input(f"Нажмите {yellow('Enter')} для выхода...")
+        sysexit("Invalid configuration")
 
-if USE_COLOR_MODE:
-    # Заставляем textwrap рассчитывать длину строк, игнорируя цветовые коды ANSI
-    textwrap.len = color_len
+    if USE_COLOR_MODE:
+        # Заставляем textwrap рассчитывать длину строк, игнорируя цветовые коды ANSI
+        textwrap.len = color_len
 
-# Список попыток компьютера
-comp_guesses: list[str] = []
-# Список попыток пользователя
-user_guesses: list[str] = []
-# Список "быков" в попытках компьютера
-comp_bulls: list[int] = []
-# Список "коров" в попытках компьютера
-comp_cows: list[int] = []
-# Список "быков" в попытках пользователя
-user_bulls: list[int] = []
-# Список "коров" в попытках пользователя
-user_cows: list[int] = []
-# Флаг окончания игры
-game_over: bool = False
-# Счётчик ходов
-turn: int = 0
+    # Список попыток компьютера
+    comp_guesses: list[str] = []
+    # Список попыток пользователя
+    user_guesses: list[str] = []
+    # Список "быков" в попытках компьютера
+    comp_bulls: list[int] = []
+    # Список "коров" в попытках компьютера
+    comp_cows: list[int] = []
+    # Список "быков" в попытках пользователя
+    user_bulls: list[int] = []
+    # Список "коров" в попытках пользователя
+    user_cows: list[int] = []
+    # Флаг окончания игры
+    game_over: bool = False
+    # Счётчик ходов
+    turn: int = 0
 
-# Основной цикл игры
-while True:
-    turn += 1
-    if turn == 1:
+    # Основной цикл игры
+    while True:
+        turn += 1
+        if turn == 1:
+            # Очистка экрана терминала и вывод правил
+            system("cls||clear")
+            print_rules()
+
+            # Компьютер "загадывает" случайное число, соответствующее правилам игры
+            if TEST_NUMBER:
+                comp_number = TEST_NUMBER
+            else:
+                comp_number = number_choice()
+            if CHEAT_MODE:
+                print(f"Компьютер загадал число {comp_number}")
+
+            # Пользователь вводит загаданное число
+            user_number = input("\nВведите число, которое хотите загадать: ")
+            # Если число не соответствует правилам игры, то просим повторить
+            while user_number != EXIT_KEY and not number_is_ok(user_number):
+                user_number = input(INPUT_HINT)
+            # Если пользователь ввёл EXIT_KEY, то выход из игры
+            if user_number == EXIT_KEY:
+                break
+
+        # Пользователь вводит свою попытку
+        user_guess = input(f"\nХод: {yellow(f'{turn:2d}')}. Введите число: ")
+        # Если число не соответствует правилам игры, то просим повторить
+        while user_guess != EXIT_KEY and not number_is_ok(user_guess):
+            user_guess = input(INPUT_HINT)
+        # Если пользователь ввёл EXIT_KEY, то выход из игры
+        if user_guess == EXIT_KEY:
+            break
+        user_guesses.append(user_guess)
+
+        if TEST_NUMBER:
+            comp_guess = TEST_NUMBER
+        else:
+            # Компьютер выбирает случайное число, соответствующее правилам игры
+            comp_guess = number_choice()
+            # Если нужно, повторяем, пока выбранное число не будет соответствовать
+            # полученной в предыдущих попытках информации
+            if random() >= RANDOM_GUESS_CHANCE and turn > 1:
+                comp_guess_is_bad = True
+                while comp_guess_is_bad:
+                    comp_guess_is_bad = False
+                    for t in range(turn - 1):
+                        bulls_temp, cows_temp = count_bulls_cows(
+                            comp_guess, comp_guesses[t]
+                        )
+                        # Если количество "быков" и "коров" не соответствует хотя бы
+                        # одной из предыдущих попыток, то выбрать другое число
+                        if bulls_temp != comp_bulls[t] or cows_temp != comp_cows[t]:
+                            comp_guess_is_bad = True
+                            comp_guess = number_choice()
+                            break
+        comp_guesses.append(comp_guess)
+
+        # Подсчитываем количество "быков" и "коров" и добавляем в соответствующие списки
+        # noinspection PyUnboundLocalVariable
+        comp_bulls_last, comp_cows_last = count_bulls_cows(comp_guess, user_number)
+        comp_bulls.append(comp_bulls_last)
+        comp_cows.append(comp_cows_last)
+        # noinspection PyUnboundLocalVariable
+        user_bulls_last, user_cows_last = count_bulls_cows(user_guess, comp_number)
+        user_bulls.append(user_bulls_last)
+        user_cows.append(user_cows_last)
+
         # Очистка экрана терминала и вывод правил
         system("cls||clear")
         print_rules()
-
-        # Компьютер "загадывает" случайное число, соответствующее правилам игры
-        if TEST_NUMBER:
-            comp_number = TEST_NUMBER
-        else:
-            comp_number = number_choice()
+        print(f"\nЗагадано: {yellow(user_number)}")
         if CHEAT_MODE:
             print(f"Компьютер загадал число {comp_number}")
-
-        # Пользователь вводит загаданное число
-        user_number = input("\nВведите число, которое хотите загадать: ")
-        # Если число не соответствует правилам игры, то просим повторить
-        while user_number != EXIT_KEY and not number_is_ok(user_number):
-            user_number = input(INPUT_HINT)
-        # Если пользователь ввёл EXIT_KEY, то выход из игры
-        if user_number == EXIT_KEY:
-            break
-
-    # Пользователь вводит свою попытку
-    user_guess = input(f"\nХод: {yellow(f'{turn:2d}')}. Введите число: ")
-    # Если число не соответствует правилам игры, то просим повторить
-    while user_guess != EXIT_KEY and not number_is_ok(user_guess):
-        user_guess = input(INPUT_HINT)
-    # Если пользователь ввёл EXIT_KEY, то выход из игры
-    if user_guess == EXIT_KEY:
-        break
-    user_guesses.append(user_guess)
-
-    if TEST_NUMBER:
-        comp_guess = TEST_NUMBER
-    else:
-        # Компьютер выбирает случайное число, соответствующее правилам игры
-        comp_guess = number_choice()
-        # Если нужно, повторяем, пока выбранное число не будет соответствовать
-        # полученной в предыдущих попытках информации
-        if random() >= RANDOM_GUESS_CHANCE and turn > 1:
-            comp_guess_is_bad = True
-            while comp_guess_is_bad:
-                comp_guess_is_bad = False
-                for t in range(turn - 1):
-                    bulls_temp, cows_temp = count_bulls_cows(
-                        comp_guess, comp_guesses[t]
-                    )
-                    # Если количество "быков" и "коров" не соответствует хотя бы одной
-                    # из предыдущих попыток, то выбрать другое число
-                    if bulls_temp != comp_bulls[t] or cows_temp != comp_cows[t]:
-                        comp_guess_is_bad = True
-                        comp_guess = number_choice()
-                        break
-    comp_guesses.append(comp_guess)
-
-    # Подсчитываем количество "быков" и "коров" и добавляем в соответствующие списки
-    # noinspection PyUnboundLocalVariable
-    comp_bulls_last, comp_cows_last = count_bulls_cows(comp_guess, user_number)
-    comp_bulls.append(comp_bulls_last)
-    comp_cows.append(comp_cows_last)
-    # noinspection PyUnboundLocalVariable
-    user_bulls_last, user_cows_last = count_bulls_cows(user_guess, comp_number)
-    user_bulls.append(user_bulls_last)
-    user_cows.append(user_cows_last)
-
-    # Очистка экрана терминала и вывод правил
-    system("cls||clear")
-    print_rules()
-    print(f"\nЗагадано: {yellow(user_number)}")
-    if CHEAT_MODE:
-        print(f"Компьютер загадал число {comp_number}")
-    # Выводим заголовок таблицы ходов
-    print(f"\n     Ход  {red('Комп')}  Б  К     {green('Вы')}   Б  К")
-    for t in range(turn):
-        # Выводим строки таблицы ходов
-        print(
-            f"     {t + 1:2d}   {comp_guesses[t]}  {comp_bulls[t]}  {comp_cows[t]}"
-            f"    {user_guesses[t]}  {user_bulls[t]}  {user_cows[t]}"
-        )
-
-    # Проверяем условия окончания игры
-    if comp_bulls_last == user_bulls_last == NUM_DIGITS:
-        print(f"\n{yellow('Ничья на')} {turn} {yellow('ходу! Победила дружба!')}")
-        if turn == 1:
-            print("Невероятное совпадение!")
-        game_over = True
-    elif user_bulls_last == NUM_DIGITS:
-        print(f"\n{green('Вы выиграли на')} {turn} {green('ходу! Поздравляю!')}")
-        if turn == 1:
-            print("Потрясающая интуиция!")
-        game_over = True
-    elif comp_bulls_last == NUM_DIGITS:
-        print(f"\n{red('Компьютер выиграл на')} {turn} {red('ходу! Сочувствую...')}")
-        if turn == 1:
-            print("Досадная случайность...")
-        print(f"Загаданное компьютером число: {red(comp_number)}")
-        game_over = True
-    if game_over:
-        if comp_number == user_number:
-            print("Загаданные числа были одинаковыми — кто бы мог подумать!")
-        if (
-            input(
-                f"\n{yellow('Спасибо за игру!')}\nНажмите {green('Enter')}, чтобы"
-                f" сыграть снова, или введите {red(EXIT_KEY)} для выхода: "
+        # Выводим заголовок таблицы ходов
+        print(f"\n     Ход  {red('Комп')}  Б  К     {green('Вы')}   Б  К")
+        for t in range(turn):
+            # Выводим строки таблицы ходов
+            print(
+                f"     {t + 1:2d}   {comp_guesses[t]}  {comp_bulls[t]}  {comp_cows[t]}"
+                f"    {user_guesses[t]}  {user_bulls[t]}  {user_cows[t]}"
             )
-            == EXIT_KEY
-        ):
-            break
-        else:
-            turn = 0
-            comp_guesses.clear()
-            user_guesses.clear()
-            comp_bulls.clear()
-            comp_cows.clear()
-            user_bulls.clear()
-            user_cows.clear()
-            game_over = False
+
+        # Проверяем условия окончания игры
+        if comp_bulls_last == user_bulls_last == NUM_DIGITS:
+            print(f"\n{yellow('Ничья на')} {turn} {yellow('ходу! Победила дружба!')}")
+            if turn == 1:
+                print("Невероятное совпадение!")
+            game_over = True
+        elif user_bulls_last == NUM_DIGITS:
+            print(f"\n{green('Вы выиграли на')} {turn} {green('ходу! Поздравляю!')}")
+            if turn == 1:
+                print("Потрясающая интуиция!")
+            game_over = True
+        elif comp_bulls_last == NUM_DIGITS:
+            print(
+                f"\n{red('Компьютер выиграл на')} {turn} {red('ходу! Сочувствую...')}"
+            )
+            if turn == 1:
+                print("Досадная случайность...")
+            print(f"Загаданное компьютером число: {red(comp_number)}")
+            game_over = True
+        if game_over:
+            if comp_number == user_number:
+                print("Загаданные числа были одинаковыми — кто бы мог подумать!")
+            if (
+                input(
+                    f"\n{yellow('Спасибо за игру!')}\nНажмите {green('Enter')}, чтобы "
+                    f"сыграть снова, или введите {red(EXIT_KEY)} для выхода: "
+                )
+                == EXIT_KEY
+            ):
+                break
+            else:
+                turn = 0
+                comp_guesses.clear()
+                user_guesses.clear()
+                comp_bulls.clear()
+                comp_cows.clear()
+                user_bulls.clear()
+                user_cows.clear()
+                game_over = False
+
+
+if __name__ == "__main__":
+    main()
