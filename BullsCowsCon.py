@@ -7,6 +7,8 @@ import textwrap
 
 # Показывать ли загаданное компьютером число
 CHEAT_MODE = False
+# Показывать ли отладочную информацию
+DEBUG_MODE = False
 # Если не пустая строка, то компьютер загадывает и постоянно выбирает это число
 TEST_NUMBER = ""
 
@@ -245,7 +247,7 @@ def guess_from_iterator(
     # Перемешиваем список допустимых цифр, чтобы затем получать размещения
     # в случайном порядке
     digits = "".join(sample(DIGITS, len(DIGITS)))
-    # Получаем первое подходящее из возможных размещений
+    # Берём первое подходящее из возможных размещений
     guess = next(
         filter(
             # Соответствует ли текущее число правилам и информации из предыдущих ходов
@@ -369,6 +371,10 @@ def main():
             break
         user_guesses.append(user_guess)
 
+        # Очистка экрана терминала и вывод правил
+        system("cls||clear")
+        print_rules()
+
         # Компьютер выбирает число для своей попытки согласно соответствующему алгоритму
         # в зависимости от номера хода
         if TEST_NUMBER:
@@ -376,14 +382,23 @@ def main():
         elif turn == 1 or random() < RANDOM_GUESS_CHANCE:
             # Случайный выбор
             comp_guess = number_choice()
+            if DEBUG_MODE:
+                print("Компьютер выбрал число случайно")
         elif 2 <= LIST_GUESS_START <= turn:
             # Выбор через список оставшихся подходящих размещений
             comp_guess = guess_from_list(
                 comp_guesses, comp_bulls, comp_cows, good_choices_list
             )
+            if DEBUG_MODE:
+                print(
+                    f"Компьютер выбрал число через список из "
+                    f"{len(good_choices_list)} вариантов"
+                )
         elif 2 <= ITER_GUESS_START <= turn:
             # Выбор через итератор подходящих размещений
             comp_guess = guess_from_iterator(comp_guesses, comp_bulls, comp_cows)
+            if DEBUG_MODE:
+                print("Компьютер выбрал число через итератор")
         else:
             # Случайный подбор
             comp_guess = guess_random(comp_guesses, comp_bulls, comp_cows)
@@ -399,9 +414,7 @@ def main():
         user_bulls.append(user_bulls_last)
         user_cows.append(user_cows_last)
 
-        # Очистка экрана терминала и вывод правил
-        system("cls||clear")
-        print_rules()
+        # Вывод таблицы ходов
         print(f"\nЗагадано: {yellow(user_number)}")
         if CHEAT_MODE:
             print(f"Компьютер загадал число {comp_number}")
