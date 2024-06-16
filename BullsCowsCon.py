@@ -10,7 +10,9 @@ CHEAT_MODE = False
 # Показывать ли отладочную информацию
 DEBUG_MODE = False
 # Если не пустая строка, то компьютер загадывает и постоянно выбирает это число
-TEST_NUMBER = ""
+COMP_NUMBER = ""
+# Если не пустая строка, то используется вместо загаданного числа и попыток пользователя
+USER_NUMBER = ""
 
 # Количество цифр в числе
 NUM_DIGITS = 4
@@ -345,30 +347,36 @@ def main():
             system("cls||clear")
             print_rules()
             # Компьютер "загадывает" случайное число, соответствующее правилам игры
-            if TEST_NUMBER:
-                comp_number = TEST_NUMBER
+            if COMP_NUMBER:
+                comp_number = COMP_NUMBER
             else:
                 comp_number = number_choice()
             if CHEAT_MODE:
                 print(f"Компьютер загадал число {comp_number}")
 
             # Пользователь вводит загаданное число
-            user_number = input("\nВведите число, которое хотите загадать: ")
-            # Если число не соответствует правилам игры, то просим повторить
-            while user_number != EXIT_KEY and not number_is_ok(user_number):
-                user_number = input(INPUT_HINT)
-            # Если пользователь ввёл EXIT_KEY, то выход из игры
-            if user_number == EXIT_KEY:
-                break
+            if USER_NUMBER:
+                user_number = USER_NUMBER
+            else:
+                user_number = input("\nВведите число, которое хотите загадать: ")
+                # Если число не соответствует правилам игры, то просим повторить
+                while user_number != EXIT_KEY and not number_is_ok(user_number):
+                    user_number = input(INPUT_HINT)
+                # Если пользователь ввёл EXIT_KEY, то выход из игры
+                if user_number == EXIT_KEY:
+                    break
 
         # Пользователь вводит свою попытку
-        user_guess = input(f"\nХод: {yellow(f'{turn:2d}')}. Введите число: ")
-        # Если число не соответствует правилам игры, то просим повторить
-        while user_guess != EXIT_KEY and not number_is_ok(user_guess):
-            user_guess = input(INPUT_HINT)
-        # Если пользователь ввёл EXIT_KEY, то выход из игры
-        if user_guess == EXIT_KEY:
-            break
+        if USER_NUMBER:
+            user_guess = USER_NUMBER
+        else:
+            user_guess = input(f"\nХод: {yellow(f'{turn:2d}')}. Введите число: ")
+            # Если число не соответствует правилам игры, то просим повторить
+            while user_guess != EXIT_KEY and not number_is_ok(user_guess):
+                user_guess = input(INPUT_HINT)
+            # Если пользователь ввёл EXIT_KEY, то выход из игры
+            if user_guess == EXIT_KEY:
+                break
         user_guesses.append(user_guess)
 
         # Очистка экрана терминала и вывод правил
@@ -377,8 +385,8 @@ def main():
 
         # Компьютер выбирает число для своей попытки согласно соответствующему алгоритму
         # в зависимости от номера хода
-        if TEST_NUMBER:
-            comp_guess = TEST_NUMBER
+        if COMP_NUMBER:
+            comp_guess = COMP_NUMBER
         elif turn == 1 or random() < RANDOM_GUESS_CHANCE:
             # Случайный выбор
             comp_guess = number_choice()
