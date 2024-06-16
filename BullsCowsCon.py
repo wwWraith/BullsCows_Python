@@ -22,13 +22,13 @@ DIGITS = "0123456789"
 NO_LEADING_ZERO = True
 
 # Вероятность выбора компьютером в свой ход просто случайного числа (от 0 до 1)
-RANDOM_GUESS_CHANCE = 0.2
+RANDOM_GUESS_CHANCE = 0.25
 # Ход, начиная с которого компьютер выбирает свою попытку через итератор
 # подходящих размещений; если меньше 2, то этот алгоритм не используется
 ITER_GUESS_START = 2
 # Ход, начиная с которого компьютер выбирает свою попытку через список оставшихся
 # подходящих размещений; если меньше 2, то этот алгоритм не используется
-LIST_GUESS_START = 3
+LIST_GUESS_START = 4
 
 # Максимально допустимая длина строк для переноса при выводе
 MAX_LINE_LENGTH = 80
@@ -154,10 +154,10 @@ def number_choice() -> str:
     # Первая цифра из списка может быть выбрана первой цифрой числа
     # в зависимости от NO_LEADING_ZERO;
     # использованная цифра удаляется из списка для генерации
-    num = digits_list.pop(randint(1 if NO_LEADING_ZERO else 0, len(digits_list) - 1))
+    number = digits_list.pop(randint(1 if NO_LEADING_ZERO else 0, len(digits_list) - 1))
     # Добавляем остальные цифры
-    num = f"{num}{''.join(sample(digits_list, NUM_DIGITS - 1))}"
-    return num
+    number = f"{number}{''.join(sample(digits_list, NUM_DIGITS - 1))}"
+    return number
 
 
 def number_is_ok(number: str) -> bool:
@@ -187,12 +187,12 @@ def count_bulls_cows(number1: str, number2: str) -> tuple[int, int]:
     :return: кортеж из 2 чисел: количество "быков" и "коров"
     """
     bulls = cows = 0
-    for n in range(NUM_DIGITS):
+    for digit1, digit2 in zip(number1, number2):
         # Если одинаковые цифры стоят на одинаковых местах, то это "бык"
-        if number1[n] == number2[n]:
+        if digit1 == digit2:
             bulls += 1
         # Иначе, если цифры просто одинаковые, то это "корова"
-        elif number1[n] in number2:
+        elif digit1 in number2:
             cows += 1
     return bulls, cows
 
@@ -208,10 +208,10 @@ def guess_is_good(
     :param cows_list: список из "коров" на предыдущих ходах
     :return: True, если попытка подходит, иначе False
     """
-    for i in range(len(guesses_list)):
+    for guess, bulls, cows in zip(guesses_list, bulls_list, cows_list):
         # Если количество "быков" и "коров" не соответствует хотя бы одной
         # из предыдущих попыток, то попытка неудачная
-        if count_bulls_cows(number, guesses_list[i]) != (bulls_list[i], cows_list[i]):
+        if count_bulls_cows(number, guess) != (bulls, cows):
             return False
     return True
 
@@ -274,7 +274,7 @@ def guess_from_list(
     :param guesses_list: список из предыдущих попыток
     :param bulls_list: список из "быков" на предыдущих ходах
     :param cows_list: список из "коров" на предыдущих ходах
-    :param choices_list: список оставшихся подходящих размещений
+    :param choices_list: список оставшихся подходящих размещений (изменяется)
     :return: строка со случайным числом, соответствующим предыдущим попыткам
     """
     # Если список оставшихся возможных размещений пока пуст, то заполняем его
@@ -296,7 +296,7 @@ def guess_from_list(
         for i in range(len(choices_list) - 1, -1, -1):
             # Удаляем элементы, которые не соответствуют информации из предыдущих ходов
             if not guess_is_good(choices_list[i], guesses_list, bulls_list, cows_list):
-                choices_list.pop(i)
+                del choices_list[i]
     guess = choice(choices_list)
     return guess
 
@@ -428,12 +428,13 @@ def main():
             print(f"Компьютер загадал число {comp_number}")
         # Выводим заголовок таблицы ходов
         print(f"\n     Ход  {red('Комп')}  Б  К     {green('Вы')}   Б  К")
-        for t in range(turn):
-            # Выводим строки таблицы ходов
-            print(
-                f"     {t + 1:2d}   {comp_guesses[t]}  {comp_bulls[t]}  {comp_cows[t]}"
-                f"    {user_guesses[t]}  {user_bulls[t]}  {user_cows[t]}"
+        for t, (cg, cb, cc, ug, ub, uc) in enumerate(
+            zip(
+                comp_guesses, comp_bulls, comp_cows, user_guesses, user_bulls, user_cows
             )
+        ):
+            # Выводим строки таблицы ходов
+            print(f"     {t + 1:2d}   {cg}  {cb}  {cc}    {ug}  {ub}  {uc}")
 
         # Проверяем условия окончания игры
         if comp_bulls_last == user_bulls_last == NUM_DIGITS:
