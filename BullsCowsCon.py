@@ -1,5 +1,6 @@
-﻿from os import system, get_terminal_size
-from random import random, randint, sample
+﻿from itertools import permutations
+from os import get_terminal_size, system
+from random import choice, randint, random, sample
 from re import compile
 from sys import exit as sysexit
 import textwrap
@@ -15,8 +16,15 @@ NUM_DIGITS = 4
 DIGITS = "0123456789"
 # Запрещать ли появление первой цифры из списка в начале числа
 NO_LEADING_ZERO = True
+
 # Вероятность выбора компьютером в свой ход просто случайного числа (от 0 до 1)
 RANDOM_GUESS_CHANCE = 0.2
+# Ход, начиная с которого компьютер выбирает свою попытку через итератор
+# подходящих размещений; если меньше 2, то этот алгоритм не используется
+ITER_GUESS_START = 2
+# Ход, начиная с которого компьютер выбирает свою попытку через список оставшихся
+# подходящих размещений; если меньше 2, то этот алгоритм не используется
+LIST_GUESS_START = 3
 
 # Максимально допустимая длина строк для переноса при выводе
 MAX_LINE_LENGTH = 80
@@ -204,6 +212,91 @@ def guess_is_good(
     return True
 
 
+def guess_random(
+    guesses_list: list[str], bulls_list: list[int], cows_list: list[int]
+) -> str:
+    """
+    Выбирает случайным образом число, соответствующее информации из предыдущих ходов.
+    :param guesses_list: список из предыдущих попыток.
+    :param bulls_list: список из "быков" на предыдущих ходах
+    :param cows_list: список из "коров" на предыдущих ходах
+    :return: строка со случайным числом, соответствующим предыдущим попыткам
+    """
+    # Выбираем случайное число, соответствующее правилам игры
+    guess = number_choice()
+    # Если нужно, повторяем, пока выбранное число не будет соответствовать
+    # полученной в предыдущих попытках информации
+    while not guess_is_good(guess, guesses_list, bulls_list, cows_list):
+        guess = number_choice()
+    return guess
+
+
+def guess_from_iterator(
+    guesses_list: list[str], bulls_list: list[int], cows_list: list[int]
+) -> str:
+    """
+    Выбирает число, соответствующее информации из предыдущих ходов, через итератор
+    подходящих размещений.
+    :param guesses_list: список из предыдущих попыток
+    :param bulls_list: список из "быков" на предыдущих ходах
+    :param cows_list: список из "коров" на предыдущих ходах
+    :return: строка со случайным числом, соответствующим предыдущим попыткам
+    """
+    # Перемешиваем список допустимых цифр, чтобы затем получать размещения
+    # в случайном порядке
+    digits = "".join(sample(DIGITS, len(DIGITS)))
+    # Получаем первое подходящее из возможных размещений
+    guess = next(
+        filter(
+            # Соответствует ли текущее число правилам и информации из предыдущих ходов
+            lambda s: number_is_ok(s)
+            and guess_is_good(s, guesses_list, bulls_list, cows_list),
+            # Итератор, перебирающий все возможные размещения и выдающий их строками
+            map("".join, permutations(digits, NUM_DIGITS)),
+        )
+    )
+    return guess
+
+
+def guess_from_list(
+    guesses_list: list[str],
+    bulls_list: list[int],
+    cows_list: list[int],
+    choices_list: list[str],
+) -> str:
+    """
+    Выбирает число, соответствующее информации из предыдущих ходов, через список
+    оставшихся подходящих размещений choices_list, который при этом обновляется.
+    :param guesses_list: список из предыдущих попыток
+    :param bulls_list: список из "быков" на предыдущих ходах
+    :param cows_list: список из "коров" на предыдущих ходах
+    :param choices_list: список оставшихся подходящих размещений
+    :return: строка со случайным числом, соответствующим предыдущим попыткам
+    """
+    # Если список оставшихся возможных размещений пока пуст, то заполняем его
+    if not choices_list:
+        # Отбираем из всех возможных размещений подходящие
+        choices_list.extend(
+            filter(
+                # Соответствует ли текущее число правилам и информации
+                # из предыдущих ходов
+                lambda s: number_is_ok(s)
+                and guess_is_good(s, guesses_list, bulls_list, cows_list),
+                # Итератор, перебирающий все возможные размещения и выдающий их строками
+                map("".join, permutations(DIGITS, NUM_DIGITS)),
+            )
+        )
+    else:
+        # Перебираем элементы имеющегося списка в обратном порядке
+        # (для предотвращения смещения индексов после удалений)
+        for i in range(len(choices_list) - 1, -1, -1):
+            # Удаляем элементы, которые не соответствуют информации из предыдущих ходов
+            if not guess_is_good(choices_list[i], guesses_list, bulls_list, cows_list):
+                choices_list.pop(i)
+    guess = choice(choices_list)
+    return guess
+
+
 def main():
     # Проверяем корректность правил
     if (
@@ -235,6 +328,8 @@ def main():
     user_bulls: list[int] = []
     # Список "коров" в попытках пользователя
     user_cows: list[int] = []
+    # Список с оставшимися подходящими размещениями
+    good_choices_list: list[str] = []
     # Флаг окончания игры
     game_over: bool = False
     # Счётчик ходов
@@ -274,18 +369,24 @@ def main():
             break
         user_guesses.append(user_guess)
 
+        # Компьютер выбирает число для своей попытки согласно соответствующему алгоритму
+        # в зависимости от номера хода
         if TEST_NUMBER:
             comp_guess = TEST_NUMBER
-        else:
-            # Компьютер выбирает случайное число, соответствующее правилам игры
+        elif turn == 1 or random() < RANDOM_GUESS_CHANCE:
+            # Случайный выбор
             comp_guess = number_choice()
-            # Если нужно, повторяем, пока выбранное число не будет соответствовать
-            # полученной в предыдущих попытках информации
-            if random() >= RANDOM_GUESS_CHANCE and turn > 1:
-                while not guess_is_good(
-                    comp_guess, comp_guesses, comp_bulls, comp_cows
-                ):
-                    comp_guess = number_choice()
+        elif 2 <= LIST_GUESS_START <= turn:
+            # Выбор через список оставшихся подходящих размещений
+            comp_guess = guess_from_list(
+                comp_guesses, comp_bulls, comp_cows, good_choices_list
+            )
+        elif 2 <= ITER_GUESS_START <= turn:
+            # Выбор через итератор подходящих размещений
+            comp_guess = guess_from_iterator(comp_guesses, comp_bulls, comp_cows)
+        else:
+            # Случайный подбор
+            comp_guess = guess_random(comp_guesses, comp_bulls, comp_cows)
         comp_guesses.append(comp_guess)
 
         # Подсчитываем количество "быков" и "коров" и добавляем в соответствующие списки
@@ -344,14 +445,15 @@ def main():
             ):
                 break
             else:
-                turn = 0
                 comp_guesses.clear()
                 user_guesses.clear()
                 comp_bulls.clear()
                 comp_cows.clear()
                 user_bulls.clear()
                 user_cows.clear()
+                good_choices_list.clear()
                 game_over = False
+                turn = 0
 
 
 if __name__ == "__main__":
