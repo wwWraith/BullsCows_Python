@@ -5,6 +5,10 @@ from re import compile
 from sys import exit as sysexit
 import textwrap
 
+
+# Версия программы
+VERSION = "1.1.0"
+
 # Показывать ли загаданное компьютером число
 CHEAT_MODE = False
 # Показывать ли отладочную информацию
@@ -127,9 +131,14 @@ def line_length() -> int:
 
 def print_rules() -> None:
     """
-    Выводит на экран описание и правила игры.
+    Выводит на экран версию, описание и правила игры.
     """
     line_length_to_use = line_length()
+    print(
+        f"Версия {yellow(VERSION)}".rjust(
+            line_length_to_use + len(COLOR_YELLOW + COLOR_RESET)
+        )
+    )
     print(
         f"Игра {yellow('«Быки и коровы»')}.".center(
             line_length_to_use + len(COLOR_YELLOW + COLOR_RESET)
