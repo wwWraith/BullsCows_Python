@@ -497,7 +497,7 @@ $RECYCLE.BIN/
 *.lnk
 
 # Draw.io backups
-*.drawio.bkp
+*.bkp
 
 # All IDEA stuff
 .idea/
