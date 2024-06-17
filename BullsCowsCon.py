@@ -379,39 +379,43 @@ def main():
                 break
         user_guesses.append(user_guess)
 
-        # Очистка экрана терминала и вывод правил
-        system("cls||clear")
-        print_rules()
-
         # Компьютер выбирает число для своей попытки согласно соответствующему алгоритму
         # в зависимости от номера хода
+        print("Подождите, пожалуйста, компьютер думает...")
         if COMP_NUMBER:
             comp_guess = COMP_NUMBER
+            comp_guess_message = ""
         elif turn == 1 or random() < RANDOM_GUESS_CHANCE:
             # Случайный выбор
             comp_guess = number_choice()
             if DEBUG_MODE:
-                print("Компьютер выбрал число случайно")
+                comp_guess_message = "Компьютер выбрал число случайно"
         elif 2 <= LIST_GUESS_START <= turn:
             # Выбор через список оставшихся подходящих размещений
             comp_guess = guess_from_list(
                 comp_guesses, comp_bulls, comp_cows, good_choices_list
             )
             if DEBUG_MODE:
-                print(
-                    f"Компьютер выбрал число через список из "
-                    f"{len(good_choices_list)} вариантов"
-                )
+                comp_guess_message = (f"Компьютер выбрал число через список из "
+                                      f"{len(good_choices_list)} вариантов")
         elif 2 <= ITER_GUESS_START <= turn:
             # Выбор через итератор подходящих размещений
             comp_guess = guess_from_iterator(comp_guesses, comp_bulls, comp_cows)
             if DEBUG_MODE:
-                print("Компьютер выбрал число через итератор")
+                comp_guess_message = "Компьютер выбрал число через итератор"
         else:
             # Случайный подбор
             comp_guess = guess_random(comp_guesses, comp_bulls, comp_cows)
+            if DEBUG_MODE:
+                comp_guess_message = "Компьютер выбрал число случайным подбором"
         comp_guesses.append(comp_guess)
 
+        # Очистка экрана терминала и вывод правил
+        system("cls||clear")
+        print_rules()
+        if DEBUG_MODE:
+            # noinspection PyUnboundLocalVariable
+            print(comp_guess_message)
         # Подсчитываем количество "быков" и "коров" и добавляем в соответствующие списки
         # noinspection PyUnboundLocalVariable
         comp_bulls_last, comp_cows_last = count_bulls_cows(comp_guess, user_number)
@@ -434,7 +438,8 @@ def main():
             )
         ):
             # Выводим строки таблицы ходов
-            print(f"     {t + 1:2d}   {cg}  {cb}  {cc}    {ug}  {ub}  {uc}")
+            print(f"     "
+                  f"{yellow(f'{t + 1:2d}')}   {cg}  {cb}  {cc}    {ug}  {ub}  {uc}")
 
         # Проверяем условия окончания игры
         if comp_bulls_last == user_bulls_last == NUM_DIGITS:
