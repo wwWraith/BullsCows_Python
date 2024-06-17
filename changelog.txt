@@ -1,0 +1,12 @@
+v1.1.0	2024-06-17
+* Added finite algorithms for guessing
++ Show version info with the rules
++ Print a message while computer is thinking
+* Increased default RANDOM_GUESS_CHANCE to 0.25 from 0.2
+* Put implementation into function main()
++ Added DEBUG_MODE to show debug info
++ Added USER_NUMBER that can be used instead of user's input
++ Added flowchart diagram
+
+v1.0.0	2024-06-16
+First public release
